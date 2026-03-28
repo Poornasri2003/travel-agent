@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TinyFish Travel Ops Agent</title>
+    <style>
+      :root {
+        --bg: #f4f7f5;
+        --card: #ffffff;
+        --text: #0f172a;
+        --muted: #64748b;
+        --accent: #16a34a;
+        --accent-dark: #15803d;
+        --border: #e2e8f0;
+        --shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
+        font-family: "Segoe UI", system-ui, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+      }
+      .topbar {
+        background: var(--card);
+        border-bottom: 1px solid var(--border);
+        padding: 14px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .brand {
+        font-weight: 800;
+        font-size: 1.15rem;
+        color: var(--accent-dark);
+      }
+      .brand span {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .layout {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+      @media print {
+        .topbar, form, #formCard, button, .loader-spinner, #loaderMessage { display: none !important; }
+        #statusText, #progressList { display: none !important; }
+        .card { box-shadow: none; border: none; margin-bottom: 12px; padding: 0; }
+        body { background: white; color: black; }
+        .hero { page-break-after: avoid; }
+        .day-card { page-break-inside: avoid; }
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow);
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 1.5rem;
+      }
+      h2 {
+        margin: 0 0 14px;
+        font-size: 1.1rem;
+      }
+      h3 {
+        margin: 0 0 10px;
+        font-size: 0.95rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      label {
+        font-size: 12px;
+        color: var(--muted);
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+      }
+      input,
+      textarea,
+      select,
+      button {
+        width: 100%;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--text);
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+      textarea {
+        resize: vertical;
+        min-height: 72px;
+      }
+      button.primary {
+        margin-top: 14px;
+        cursor: pointer;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        font-weight: 700;
+        padding: 12px;
+      }
+      button.primary:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      @media (max-width: 640px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .api-line {
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+        background: #f1f5f9;
+        padding: 8px 10px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        word-break: break-all;
+      }
+      .hero {
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+        min-height: 200px;
+        background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+        margin-bottom: 20px;
+      }
+      .hero img {
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+        display: block;
+      }
+      .hero-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, rgba(15, 23, 42, 0.75), transparent 55%);
+        display: flex;
+        align-items: flex-end;
+        padding: 20px;
+        color: #fff;
+      }
+      .hero-overlay h2 {
+        margin: 0;
+        font-size: 1.35rem;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+      }
+      .pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .pill {
+        font-size: 12px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #ecfdf5;
+        color: var(--accent-dark);
+        font-weight: 600;
+      }
+      .options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 14px;
+      }
+      .option-card {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+        background: #fafafa;
+      }
+      .option-card h4 {
+        margin: 0 0 8px;
+        font-size: 14px;
+      }
+      .option-meta {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 10px;
+      }
+      .option-card a {
+        color: var(--accent-dark);
+        font-weight: 700;
+        text-decoration: none;
+      }
+      .option-card a:hover {
+        text-decoration: underline;
+      }
+      .day-card {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+        margin-bottom: 12px;
+        align-items: start;
+      }
+
+
+      .list-compact {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+        color: var(--text);
+      }
+      .log-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .evidence a {
+        display: inline-block;
+        margin: 4px 6px 0 0;
+        font-size: 12px;
+        color: var(--accent-dark);
+      }
+      .section-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 12px;
+        font-size: 0.95rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .section-head svg {
+        flex-shrink: 0;
+        opacity: 0.88;
+        color: var(--accent-dark);
+      }
+      .transport-split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        align-items: start;
+      }
+      @media (max-width: 800px) {
+        .transport-split {
+          grid-template-columns: 1fr;
+        }
+      }
+      .guide-split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+      @media (max-width: 800px) {
+        .guide-split {
+          grid-template-columns: 1fr;
+        }
+      }
+      .detail-line {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 4px;
+        line-height: 1.4;
+      }
+      .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 12px 0 8px;
+      }
+      .btn-open {
+        display: inline-block;
+        padding: 8px 14px;
+        background: var(--accent);
+        color: #fff !important;
+        border-radius: 8px;
+        font-weight: 700;
+        text-decoration: none;
+        font-size: 13px;
+      }
+      .btn-copy {
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #fff;
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--text);
+      }
+      .url-show {
+        font-size: 11px;
+        word-break: break-all;
+        font-family: ui-monospace, monospace;
+        color: var(--muted);
+      }
+      .url-show a {
+        color: #2563eb;
+      }
+      .tour-op-grid {
+        display: grid;
+        gap: 12px;
+      }
+      .tour-op-card {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        background: #f8fafc;
+      }
+      .tour-op-card h4 {
+        margin: 0 0 6px;
+        font-size: 14px;
+      }
+      .top-picks-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 14px;
+      }
+      #loaderOverlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.85);
+        color: white;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        text-align: center;
+      }
+      .loader-spinner {
+        border: 4px solid rgba(255,255,255,0.3);
+        border-top: 4px solid var(--accent);
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 24px;
+      }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      #loaderMessage {
+        font-size: 1.5rem;
+        font-weight: 600;
+        max-width: 80%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loaderOverlay">
+      <div class="loader-spinner"></div>
+      <div id="loaderMessage">Analyzing budget...</div>
+    </div>
+    <header class="topbar">
+      <div class="brand">TinyFish <span>Travel Ops Agent</span></div>
+      <div class="muted">Live web automation · Evidence-backed options</div>
+    </header>
+
+    <div class="layout">
+      <main>
+        <section class="card" id="formCard">
+          <h1>Plan your trip</h1>
+          <p class="muted">Choose state → city (free geography API). Dates use your browser calendar. Results use TinyFish on real booking sites.</p>
+          <form id="tripForm">
+            <div class="grid">
+              <div>
+                <label for="fromState">From state</label>
+                <select id="fromState" required></select>
+              </div>
+              <div>
+                <label for="toState">To state</label>
+                <select id="toState" required></select>
+              </div>
+              <div>
+                <label for="fromCity">From city</label>
+                <input id="fromCity" list="fromCityList" value="Bengaluru" required autocomplete="off" />
+                <datalist id="fromCityList"></datalist>
+              </div>
+              <div>
+                <label for="toCity">To city</label>
+                <input id="toCity" list="toCityList" value="Panaji" required autocomplete="off" />
+                <datalist id="toCityList"></datalist>
+              </div>
+              <div>
+                <label for="tripDays">Trip days</label>
+                <input id="tripDays" type="number" value="3" min="1" max="14" required />
+              </div>
+              <div>
+                <label for="budget">Max budget (INR)</label>
+                <input id="budget" type="number" value="10000" min="1000" required />
+              </div>
+              <div>
+                <label for="travelers">Travelers</label>
+                <input id="travelers" type="number" value="1" min="1" max="10" required />
+              </div>
+              <div>
+                <label for="startDate">Start date</label>
+                <input id="startDate" type="date" />
+              </div>
+            </div>
+            <div style="margin-top: 12px">
+              <label for="preferences">Preferences</label>
+              <textarea id="preferences" placeholder="Budget hotel near beach, morning flight preferred"></textarea>
+            </div>
+            <button class="primary" id="runButton" type="submit">Search &amp; plan</button>
+          </form>
+        </section>
+
+        <section class="card">
+          <h2>Status</h2>
+          <div id="statusText" class="muted">Ready.</div>
+          <ul id="progressList" class="log-list"></ul>
+        </section>
+
+        <section id="resultCard" style="display: none">
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+            <button type="button" onclick="window.print()" style="background: var(--accent-dark); color: white; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 12px rgba(21, 128, 61, 0.3);">
+              ↓ Export Itinerary (PDF)
+            </button>
+          </div>
+          <div class="hero" id="heroBlock">
+            <img id="heroImg" alt="" style="display: none" />
+            <div class="hero-overlay" id="heroOverlay">
+              <h2 id="heroTitle">Your trip</h2>
+            </div>
+          </div>
+
+          <div class="card">
+            <p id="runMeta" class="muted"></p>
+            <p id="summary" style="margin: 8px 0 0; font-size: 15px; line-height: 1.5"></p>
+            <div class="pill-row">
+              <span class="pill" id="budgetPill"></span>
+              <span class="pill" id="scorePill"></span>
+            </div>
+          </div>
+
+          <div class="card" id="guideWrap" style="display: none">
+            <div class="guide-split">
+              <div id="guideColumn">
+                <h3 class="section-head">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                  </svg>
+                  Tour guide (live research)
+                </h3>
+                <p class="muted" id="guideBest"></p>
+                <p id="guideFood" style="font-size: 14px; margin-top: 8px"></p>
+                <p id="guideSafety" style="font-size: 14px; margin-top: 8px"></p>
+                <p id="guideCulture" style="font-size: 14px; margin-top: 8px"></p>
+                <ul id="guideTips" class="list-compact" style="margin-top: 10px"></ul>
+              </div>
+              <div id="operatorsColumn" style="display: none">
+                <h3 class="section-head">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                  Full-trip operators
+                </h3>
+                <p class="muted" style="font-size: 13px; margin: 0 0 12px">
+                  Contact details from live operator sites (verify before paying).
+                </p>
+                <div id="tourOperators" class="tour-op-grid"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2 style="margin-bottom: 14px">Top picks</h2>
+            <div id="recommendations" class="top-picks-grid"></div>
+          </div>
+
+          <div class="card">
+            <p class="muted" style="font-size: 12px; margin: 0 0 16px; line-height: 1.45">
+              If <strong>From / To</strong> are empty on a partner site, that link is usually a <strong>generic landing page</strong>, not the URL after a search. Our agent is told to copy the <strong>address bar after searching</strong> your cities and date so fields pre-fill when the site supports it.
+            </p>
+            <div class="transport-split">
+              <div>
+                <h3 class="section-head">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-1.1.1-1.5.5l-.5.5c-.4.4-.6 1.1-.5 1.7L4 14l-2 2c-.5.5-.5 1.3 0 1.8l.3.3c.5.5 1.3.5 1.8 0l2-2 5.6.7c.6.1 1.3-.1 1.7-.5l.5-.5c.4-.4.6-1.1.5-1.6z" />
+                  </svg>
+                  Flights
+                </h3>
+                <div id="flights" class="options-grid"></div>
+              </div>
+              <div>
+                <h3 class="section-head">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="4" y="3" width="16" height="16" rx="2" />
+                    <path d="M4 11h16" />
+                    <path d="M12 3v8" />
+                  </svg>
+                  Trains
+                </h3>
+                <div id="trains" class="options-grid"></div>
+              </div>
+            </div>
+            <div class="transport-split" style="margin-top: 24px">
+              <div>
+                <h3 class="section-head">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M8 6v6" />
+                    <path d="M16 6v6" />
+                    <rect x="4" y="4" width="16" height="16" rx="2" />
+                    <path d="M4 16h16" />
+                  </svg>
+                  Buses
+                </h3>
+                <div id="buses" class="options-grid"></div>
+              </div>
+              <div>
+                <h3 class="section-head">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M3 10h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8z" />
+                    <path d="M7 10V7a5 5 0 0 1 10 0v3" />
+                  </svg>
+                  Hotels
+                </h3>
+                <div id="hotels" class="options-grid"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Itinerary</h3>
+            <div id="itinerary"></div>
+          </div>
+
+          <div class="card">
+            <h3>Evidence (pages the agent used)</h3>
+            <div id="evidence" class="evidence"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const form = document.getElementById("tripForm");
+      const statusText = document.getElementById("statusText");
+      const resultCard = document.getElementById("resultCard");
+      const runButton = document.getElementById("runButton");
+
+      const summaryEl = document.getElementById("summary");
+      const runMetaEl = document.getElementById("runMeta");
+      const budgetPill = document.getElementById("budgetPill");
+      const scorePill = document.getElementById("scorePill");
+      const recommendationsEl = document.getElementById("recommendations");
+      const flightsEl = document.getElementById("flights");
+      const busesEl = document.getElementById("buses");
+      const hotelsEl = document.getElementById("hotels");
+      const itineraryEl = document.getElementById("itinerary");
+      const evidenceEl = document.getElementById("evidence");
+      const progressListEl = document.getElementById("progressList");
+      const historyListEl = document.getElementById("historyList");
+      const heroImg = document.getElementById("heroImg");
+      const heroTitle = document.getElementById("heroTitle");
+      const guideWrap = document.getElementById("guideWrap");
+      const guideColumn = document.getElementById("guideColumn");
+      const operatorsColumn = document.getElementById("operatorsColumn");
+      const tourOperatorsEl = document.getElementById("tourOperators");
+      const trainsEl = document.getElementById("trains");
+
+      const loaderOverlay = document.getElementById("loaderOverlay");
+      const loaderMessage = document.getElementById("loaderMessage");
+      const loaderMessages = [
+        "Analyzing budget...",
+        "Finding flight routes...",
+        "Checking hotel availability...",
+        "Consulting local travel guides...",
+        "Calculating total expenses...",
+        "Plotting itinerary...",
+        "Finding best travel tours...",
+        "Finding guidance...",
+        "Gathering evidence links...",
+        "Finalizing your trip plan..."
+      ];
+      let loaderInterval;
+
+      function showLoader() {
+        loaderOverlay.style.display = "flex";
+        let msgIndex = 0;
+        loaderMessage.textContent = loaderMessages[msgIndex];
+        loaderInterval = setInterval(() => {
+          msgIndex = (msgIndex + 1) % loaderMessages.length;
+          loaderMessage.textContent = loaderMessages[msgIndex];
+        }, 2200);
+      }
+
+      function hideLoader() {
+        loaderOverlay.style.display = "none";
+        clearInterval(loaderInterval);
+      }
+
+      function clearList(node) {
+        while (node.firstChild) node.removeChild(node.firstChild);
+      }
+
+      function addLog(text) {
+        const li = document.createElement("li");
+        li.textContent = text;
+        progressListEl.appendChild(li);
+      }
+
+      function appendLines(parent, lines) {
+        lines.forEach((line) => {
+          if (!line) return;
+          const d = document.createElement("div");
+          d.className = "detail-line";
+          d.textContent = line;
+          parent.appendChild(d);
+        });
+      }
+
+      function bookingCard(title, lines, url, ctaLabel) {
+        const div = document.createElement("div");
+        div.className = "option-card";
+        const h = document.createElement("h4");
+        h.textContent = title;
+        div.appendChild(h);
+        appendLines(div, lines);
+        const row = document.createElement("div");
+        row.className = "btn-row";
+        const openLink = document.createElement("a");
+        openLink.className = "btn-open";
+        openLink.href = url;
+        openLink.target = "_blank";
+        openLink.rel = "noreferrer";
+        openLink.textContent = ctaLabel;
+        const copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.className = "btn-copy";
+        copyBtn.textContent = "Copy link";
+        copyBtn.addEventListener("click", () => {
+          navigator.clipboard.writeText(url).catch(() => {});
+        });
+        row.appendChild(openLink);
+        row.appendChild(copyBtn);
+        div.appendChild(row);
+        const urlBox = document.createElement("div");
+        urlBox.className = "url-show";
+        const urlA = document.createElement("a");
+        urlA.href = url;
+        urlA.target = "_blank";
+        urlA.rel = "noreferrer";
+        urlA.textContent = url;
+        urlBox.appendChild(urlA);
+        div.appendChild(urlBox);
+        return div;
+      }
+
+      function flightLines(f) {
+        const lines = [];
+        lines.push("₹" + (f.price_inr ?? "—") + " · " + (f.source || ""));
+        if (f.departure_time || f.arrival_time) {
+          lines.push((f.departure_time || "—") + " → " + (f.arrival_time || "—"));
+        }
+        if (f.cabin_class) lines.push("Class: " + f.cabin_class);
+        if (f.stops_info) lines.push("Stops / route: " + f.stops_info);
+        if (f.seats_available) lines.push("Seats (from site): " + f.seats_available);
+        if (f.availability_status) lines.push("Availability: " + f.availability_status);
+        return lines;
+      }
+
+      function busLines(b) {
+        const lines = [];
+        lines.push("₹" + (b.price_inr ?? "—") + (b.duration ? " · " + b.duration : "") + " · " + (b.source || ""));
+        if (b.coach_type) lines.push("Coach: " + b.coach_type);
+        if (b.departure_time || b.arrival_time) {
+          lines.push((b.departure_time || "—") + " → " + (b.arrival_time || "—"));
+        }
+        if (b.seats_available) lines.push("Seats / berths (from site): " + b.seats_available);
+        if (b.availability_status) lines.push("Availability: " + b.availability_status);
+        return lines;
+      }
+
+      function trainLines(t) {
+        const lines = [];
+        const num = t.train_number ? " #" + t.train_number : "";
+        lines.push((t.title || "Train") + num + " · " + (t.source || ""));
+        if (t.price_inr != null) lines.push("From ₹" + t.price_inr + (t.class_type ? " · " + t.class_type : ""));
+        if (t.duration) lines.push("Duration: " + t.duration);
+        if (t.departure_time || t.arrival_time) {
+          lines.push((t.departure_time || "—") + " → " + (t.arrival_time || "—"));
+        }
+        if (t.seats_available) lines.push("Seats / berths (from site): " + t.seats_available);
+        if (t.availability_status) lines.push("Availability: " + t.availability_status);
+        if (t.waitlist_info) lines.push("Waitlist: " + t.waitlist_info);
+        return lines;
+      }
+
+      function hotelLines(h) {
+        const lines = [];
+        lines.push("₹" + (h.price_per_night_inr ?? "—") + "/night · " + (h.source || ""));
+        if (h.locality) lines.push("Area: " + h.locality);
+        if (h.rooms_note) lines.push("Rooms: " + h.rooms_note);
+        if (h.availability_status) lines.push("Availability: " + h.availability_status);
+        return lines;
+      }
+
+      function renderTourOperators(ops) {
+        tourOperatorsEl.innerHTML = "";
+        (ops || []).forEach((op) => {
+          const card = document.createElement("div");
+          card.className = "tour-op-card";
+          const h = document.createElement("h4");
+          h.textContent = op.name || "Operator";
+          card.appendChild(h);
+          if (op.description) {
+            const p = document.createElement("p");
+            p.className = "muted";
+            p.style.fontSize = "13px";
+            p.style.margin = "0 0 8px";
+            p.textContent = op.description;
+            card.appendChild(p);
+          }
+          const row = document.createElement("div");
+          row.className = "btn-row";
+          const site = document.createElement("a");
+          site.className = "btn-open";
+          site.href = op.website_url;
+          site.target = "_blank";
+          site.rel = "noreferrer";
+          site.textContent = "Open website";
+          row.appendChild(site);
+          const copySite = document.createElement("button");
+          copySite.type = "button";
+          copySite.className = "btn-copy";
+          copySite.textContent = "Copy site URL";
+          copySite.addEventListener("click", () => {
+            navigator.clipboard.writeText(op.website_url).catch(() => {});
+          });
+          row.appendChild(copySite);
+          card.appendChild(row);
+          const urlBox = document.createElement("div");
+          urlBox.className = "url-show";
+          const ua = document.createElement("a");
+          ua.href = op.website_url;
+          ua.target = "_blank";
+          ua.rel = "noreferrer";
+          ua.textContent = op.website_url;
+          urlBox.appendChild(ua);
+          card.appendChild(urlBox);
+          if (op.phone) {
+            const tel = document.createElement("a");
+            tel.href = "tel:" + op.phone.replace(/\s+/g, "");
+            tel.className = "detail-line";
+            tel.style.display = "block";
+            tel.style.marginTop = "6px";
+            tel.textContent = "Phone: " + op.phone;
+            card.appendChild(tel);
+          }
+          if (op.email) {
+            const em = document.createElement("a");
+            em.href = "mailto:" + op.email;
+            em.className = "detail-line";
+            em.style.display = "block";
+            em.textContent = "Email: " + op.email;
+            card.appendChild(em);
+          }
+          tourOperatorsEl.appendChild(card);
+        });
+      }
+
+      async function loadStates() {
+        const fromSel = document.getElementById("fromState");
+        const toSel = document.getElementById("toState");
+        fromSel.innerHTML = "";
+        toSel.innerHTML = "";
+        const res = await fetch("/api/geography/states");
+        const data = await res.json();
+        const states = data.states || [];
+        states.forEach((s) => {
+          const o1 = document.createElement("option");
+          o1.value = s;
+          o1.textContent = s;
+          fromSel.appendChild(o1.cloneNode(true));
+          toSel.appendChild(o1);
+        });
+        fromSel.value = "Karnataka";
+        toSel.value = "Goa";
+        await fillCityList("from", fromSel.value);
+        await fillCityList("to", toSel.value);
+      }
+
+      async function fillCityList(side, state) {
+        const listId = side === "from" ? "fromCityList" : "toCityList";
+        const list = document.getElementById(listId);
+        clearList(list);
+        const res = await fetch("/api/geography/cities", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state })
+        });
+        const data = await res.json();
+        (data.cities || []).forEach((c) => {
+          const opt = document.createElement("option");
+          opt.value = c;
+          list.appendChild(opt);
+        });
+      }
+
+      document.getElementById("fromState").addEventListener("change", async (e) => {
+        await fillCityList("from", e.target.value);
+      });
+      document.getElementById("toState").addEventListener("change", async (e) => {
+        await fillCityList("to", e.target.value);
+      });
+
+      function setMinDate() {
+        const d = document.getElementById("startDate");
+        const t = new Date();
+        const iso = t.toISOString().split("T")[0];
+        d.min = iso;
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        runButton.disabled = true;
+        showLoader();
+        resultCard.style.display = "none";
+        clearList(progressListEl);
+        statusText.textContent = "Calling TinyFish on live booking sites…";
+        addLog("POST /api/plan");
+        addLog("TinyFish automation/run (web agent)");
+        addLog("Parsing result + Wikipedia hero image");
+
+        const toCity = document.getElementById("toCity").value.trim();
+        const fromCity = document.getElementById("fromCity").value.trim();
+
+        const payload = {
+          from_city: fromCity,
+          to_city: toCity,
+          from_state: document.getElementById("fromState").value || null,
+          to_state: document.getElementById("toState").value || null,
+          trip_days: Number(document.getElementById("tripDays").value),
+          max_budget_inr: Number(document.getElementById("budget").value),
+          travelers: Number(document.getElementById("travelers").value),
+          start_date: document.getElementById("startDate").value || null,
+          preferences: document.getElementById("preferences").value.trim() || null
+        };
+
+        try {
+          const response = await fetch("/api/plan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.detail || "Request failed");
+          }
+
+          heroTitle.textContent = toCity + " · " + (payload.to_state || "");
+          if (data.destination_image_url) {
+            heroImg.src = data.destination_image_url;
+            heroImg.alt = data.destination_image_attribution || "Destination";
+            heroImg.style.display = "block";
+          } else {
+            heroImg.style.display = "none";
+          }
+
+          summaryEl.textContent = data.summary || "";
+          runMetaEl.textContent =
+            "App run: " +
+            (data.run_id || "—") +
+            " · TinyFish run: " +
+            (data.tinyfish_automation_run_id || "—") +
+            (data.destination_image_attribution ? " · Photo: " + data.destination_image_attribution : "");
+
+          const budgetTag =
+            data.within_budget === true ? "Within budget" : data.within_budget === false ? "Over budget" : "Budget unknown";
+          budgetPill.textContent = "Est. total ₹" + (data.estimated_total_inr ?? "N/A") + " · " + budgetTag;
+          scorePill.textContent = "Score " + (data.score_breakdown?.total_score ?? "—");
+
+          const tg = data.tour_guide;
+          const hasGuideText =
+            tg &&
+            (tg.best_time_to_visit ||
+              tg.food_and_drinks ||
+              tg.safety_and_transport ||
+              tg.cultural_notes ||
+              (tg.local_tips && tg.local_tips.length));
+          const hasOps = data.tour_operators && data.tour_operators.length > 0;
+          if (hasGuideText || hasOps) {
+            guideWrap.style.display = "block";
+            guideColumn.style.display = hasGuideText ? "block" : "none";
+            operatorsColumn.style.display = hasOps ? "block" : "none";
+            document.getElementById("guideBest").textContent =
+              tg && tg.best_time_to_visit ? "Best time: " + tg.best_time_to_visit : "";
+            document.getElementById("guideFood").textContent =
+              tg && tg.food_and_drinks ? "Eat & drink: " + tg.food_and_drinks : "";
+            document.getElementById("guideSafety").textContent =
+              tg && tg.safety_and_transport ? "Safety & transport: " + tg.safety_and_transport : "";
+            document.getElementById("guideCulture").textContent =
+              tg && tg.cultural_notes ? "Culture: " + tg.cultural_notes : "";
+            const tipsUl = document.getElementById("guideTips");
+            clearList(tipsUl);
+            if (tg && tg.local_tips) {
+              tg.local_tips.forEach((t) => {
+                const li = document.createElement("li");
+                li.textContent = t;
+                tipsUl.appendChild(li);
+              });
+            }
+            if (hasOps) {
+              renderTourOperators(data.tour_operators);
+            }
+          } else {
+            guideWrap.style.display = "none";
+          }
+
+          function fillGrid(el, items, mapFn) {
+            el.innerHTML = "";
+            items.forEach((item) => el.appendChild(mapFn(item)));
+          }
+
+          recommendationsEl.innerHTML = "";
+          if (data.recommended_flight) {
+            const rf = data.recommended_flight;
+            recommendationsEl.appendChild(
+              bookingCard(rf.title, flightLines(rf), rf.booking_url, "Open flight link")
+            );
+          }
+          if (data.recommended_hotel) {
+            const rh = data.recommended_hotel;
+            recommendationsEl.appendChild(
+              bookingCard(rh.name, hotelLines(rh), rh.booking_url, "Open hotel link")
+            );
+          }
+
+          fillGrid(flightsEl, data.flights || [], (f) =>
+            bookingCard(f.title, flightLines(f), f.booking_url, "Open flight link")
+          );
+          fillGrid(trainsEl, data.trains || [], (t) =>
+            bookingCard(t.title || "Train", trainLines(t), t.booking_url, "Open train link")
+          );
+          fillGrid(busesEl, data.buses || [], (b) =>
+            bookingCard(b.title, busLines(b), b.booking_url, "Open bus link")
+          );
+          fillGrid(hotelsEl, data.hotels || [], (h) =>
+            bookingCard(h.name, hotelLines(h), h.booking_url, "Open hotel link")
+          );
+
+          itineraryEl.innerHTML = "";
+          for (const item of data.itinerary || []) {
+            const wrap = document.createElement("div");
+            wrap.className = "day-card";
+            const body = document.createElement("div");
+            const att = Array.isArray(item.attractions) && item.attractions.length ? item.attractions.join(", ") : "";
+            body.innerHTML =
+              "<strong>Day " +
+              item.day +
+              ": " +
+              item.title +
+              "</strong><p class=\"muted\" style=\"margin:8px 0 0;font-size:14px\">" +
+              item.details +
+              "</p>" +
+              (att ? "<p class=\"muted\" style=\"margin:8px 0 0;font-size:13px\">Spots: " + att + "</p>" : "");
+            wrap.appendChild(body);
+            itineraryEl.appendChild(wrap);
+          }
+
+          evidenceEl.innerHTML = "";
+          (data.evidence_urls || []).forEach((url) => {
+            const a = document.createElement("a");
+            a.href = url;
+            a.target = "_blank";
+            a.rel = "noreferrer";
+            a.textContent = url.replace(/^https?:\/\//, "").slice(0, 72) + (url.length > 72 ? "…" : "");
+            evidenceEl.appendChild(a);
+          });
+
+          resultCard.style.display = "block";
+          statusText.textContent = "Done.";
+        } catch (error) {
+          statusText.textContent = "Error: " + error.message;
+          addLog("Failed");
+        } finally {
+          runButton.disabled = false;
+          hideLoader();
+        }
+      });
+
+      setMinDate();
+      loadStates();
+    </script>
+  </body>
+</html>
